@@ -28,36 +28,62 @@ ChartJS.register(
 
 // 默认值
 const DEFAULTS = {
-  electricPricePerKwh: 2.1,      // 电价 元/度
-  fuelPricePerLiter: 7.0,        // 油价 元/升
-  electricPer100km: 27.62,       // 百公里电耗 度 (默认基于: 50km用13.81度)
-  fuelPer100km: 7.0,             // 百公里油耗 升
+  // 充电相关 - 用户输入花费和里程
+  electricCost: 29,           // 充电花费 元
+  electricDistance: 50,       // 充电后跑的里程 公里
+  electricPricePerKwh: 2.1,   // 电价 元/度
+  
+  // 加油相关 - 用户输入花费和里程
+  fuelCost: 100,              // 加油花费 元
+  fuelDistance: 200,          // 加油后跑的里程 公里
+  fuelPricePerLiter: 7.0,     // 油价 元/升
 }
 
 function App() {
-  // 用户输入参数
-  const [electricPrice, setElectricPrice] = useState(DEFAULTS.electricPricePerKwh)
-  const [fuelPrice, setFuelPrice] = useState(DEFAULTS.fuelPricePerLiter)
-  const [electricPer100km, setElectricPer100km] = useState(DEFAULTS.electricPer100km)
-  const [fuelPer100km, setFuelPer100km] = useState(DEFAULTS.fuelPer100km)
+  // 用户输入参数 - 充电
+  const [electricCost, setElectricCost] = useState(DEFAULTS.electricCost)
+  const [electricDistance, setElectricDistance] = useState(DEFAULTS.electricDistance)
+  const [electricPricePerKwh, setElectricPricePerKwh] = useState(DEFAULTS.electricPricePerKwh)
+  
+  // 用户输入参数 - 加油
+  const [fuelCost, setFuelCost] = useState(DEFAULTS.fuelCost)
+  const [fuelDistance, setFuelDistance] = useState(DEFAULTS.fuelDistance)
+  const [fuelPricePerLiter, setFuelPricePerLiter] = useState(DEFAULTS.fuelPricePerLiter)
 
-  // 计算每公里成本
+  // 计算每公里成本和百公里消耗
   const costs = useMemo(() => {
-    const electricCostPerKm = (electricPrice * electricPer100km) / 100
-    const fuelCostPerKm = (fuelPrice * fuelPer100km) / 100
+    // 每公里成本 = 总花费 / 里程
+    const electricCostPerKm = electricDistance > 0 ? electricCost / electricDistance : 0
+    const fuelCostPerKm = fuelDistance > 0 ? fuelCost / fuelDistance : 0
+    
+    // 反算百公里电耗/油耗
+    // 百公里电费 = 每公里电费 * 100
+    const electricCostPer100km = electricCostPerKm * 100
+    const fuelCostPer100km = fuelCostPerKm * 100
+    
+    // 百公里电耗(度) = 百公里电费 / 电价
+    const electricPer100km = electricPricePerKwh > 0 ? electricCostPer100km / electricPricePerKwh : 0
+    // 百公里油耗(升) = 百公里油费 / 油价
+    const fuelPer100km = fuelPricePerLiter > 0 ? fuelCostPer100km / fuelPricePerLiter : 0
+    
     const diff = electricCostPerKm - fuelCostPerKm
+    
     // 临界电价：使充电成本等于加油成本时的电价
-    const criticalElectricPrice = (fuelCostPerKm * 100) / electricPer100km
+    // 当 电价 * 百公里电耗 / 100 = 加油成本每公里
+    // 电价 = 加油成本每公里 * 100 / 百公里电耗
+    const criticalElectricPrice = electricPer100km > 0 ? (fuelCostPerKm * 100) / electricPer100km : 0
     
     return {
       electricCostPerKm,
       fuelCostPerKm,
+      electricCostPer100km,
+      fuelCostPer100km,
+      electricPer100km,
+      fuelPer100km,
       diff,
-      criticalElectricPrice,
-      electricCostPer100km: electricPrice * electricPer100km,
-      fuelCostPer100km: fuelPrice * fuelPer100km
+      criticalElectricPrice
     }
-  }, [electricPrice, fuelPrice, electricPer100km, fuelPer100km])
+  }, [electricCost, electricDistance, electricPricePerKwh, fuelCost, fuelDistance, fuelPricePerLiter])
 
   // 决策建议
   const decision = useMemo(() => {
@@ -117,7 +143,7 @@ function App() {
     }
   }
 
-  // 成本对比图数据
+  // 成本对比图数据 - 电价变化
   const costChartData = useMemo(() => {
     const labels = []
     const electricCosts = []
@@ -125,7 +151,11 @@ function App() {
     
     for (let p = 0.5; p <= 5; p += 0.1) {
       labels.push(p.toFixed(1))
-      electricCosts.push((p * electricPer100km) / 100)
+      // 用新电价计算每公里成本
+      const newElectricCostPerKm = costs.electricPer100km > 0 
+        ? (p * costs.electricPer100km) / 100 
+        : 0
+      electricCosts.push(newElectricCostPerKm)
       fuelCosts.push(costs.fuelCostPerKm)
     }
     
@@ -150,17 +180,24 @@ function App() {
         }
       ]
     }
-  }, [electricPer100km, costs.fuelCostPerKm])
+  }, [costs])
 
-  // 临界电价图数据
+  // 临界电价图数据 - 油价变化
   const criticalChartData = useMemo(() => {
     const labels = []
     const criticalPrices = []
     
     for (let f = 5; f <= 12; f += 0.2) {
       labels.push(f.toFixed(1))
-      const fuelCostPerKm = (f * fuelPer100km) / 100
-      criticalPrices.push((fuelCostPerKm * 100) / electricPer100km)
+      // 新油价下的每公里成本
+      const newFuelCostPerKm = costs.fuelPer100km > 0 
+        ? (f * costs.fuelPer100km) / 100 
+        : 0
+      // 临界电价
+      const critical = costs.electricPer100km > 0 
+        ? (newFuelCostPerKm * 100) / costs.electricPer100km 
+        : 0
+      criticalPrices.push(critical)
     }
     
     return {
@@ -174,7 +211,7 @@ function App() {
         tension: 0.4
       }]
     }
-  }, [fuelPer100km, electricPer100km])
+  }, [costs])
 
   // 场景对比图数据
   const scenarioChartData = useMemo(() => {
@@ -192,23 +229,19 @@ function App() {
       datasets: [
         {
           label: '纯充电',
-          data: scenarios.map(s => 
-            ((electricPrice * s.elecMult * electricPer100km) / 100) * annualKm
-          ),
+          data: scenarios.map(s => costs.electricCostPerKm * s.elecMult * annualKm),
           backgroundColor: '#00d4ff',
           borderRadius: 8
         },
         {
           label: '纯加油',
-          data: scenarios.map(s => 
-            ((fuelPrice * s.fuelMult * fuelPer100km) / 100) * annualKm
-          ),
+          data: scenarios.map(s => costs.fuelCostPerKm * s.fuelMult * annualKm),
           backgroundColor: '#f97316',
           borderRadius: 8
         }
       ]
     }
-  }, [electricPrice, fuelPrice, electricPer100km, fuelPer100km])
+  }, [costs])
 
   // 成本比率图数据
   const ratioChartData = useMemo(() => {
@@ -217,8 +250,13 @@ function App() {
     
     for (let p = 0.5; p <= 5; p += 0.1) {
       labels.push(p.toFixed(1))
-      const elecCost = (p * electricPer100km) / 100
-      ratios.push(elecCost / costs.fuelCostPerKm)
+      const newElectricCostPerKm = costs.electricPer100km > 0 
+        ? (p * costs.electricPer100km) / 100 
+        : 0
+      const ratio = costs.fuelCostPerKm > 0 
+        ? newElectricCostPerKm / costs.fuelCostPerKm 
+        : 0
+      ratios.push(ratio)
     }
     
     return {
@@ -232,7 +270,7 @@ function App() {
         tension: 0.4
       }]
     }
-  }, [electricPer100km, costs.fuelCostPerKm])
+  }, [costs])
 
   // 敏感性分析表数据
   const sensitivityData = useMemo(() => {
@@ -251,7 +289,9 @@ function App() {
     const eCost = sensitivityData.currentElecCost * (1 + ev)
     const fCost = sensitivityData.currentFuelCost * (1 + fv)
     const diff = eCost - fCost
-    const diffPercent = Math.abs(diff) / Math.max(eCost, fCost) * 100
+    const diffPercent = Math.max(eCost, fCost) > 0 
+      ? Math.abs(diff) / Math.max(eCost, fCost) * 100 
+      : 0
     const isCurrent = (ev === 0 && fv === 0)
     
     let cellClass = ''
@@ -285,78 +325,130 @@ function App() {
     <div className="container">
       <header>
         <h1>🚗 混动车能源成本分析看板</h1>
-        <p className="subtitle">智能分析加油与充电的最优选择 | 根据您的车辆实际油耗电耗计算</p>
+        <p className="subtitle">智能分析加油与充电的最优选择 | 根据您的实际花费计算</p>
       </header>
 
       {/* 用户输入面板 */}
       <div className="input-panel">
-        <h2>📝 请输入您的车辆参数</h2>
+        <h2>📝 请输入您的实际花费</h2>
+        <p className="input-hint">填写您每次充电/加油的花费和跑的里程，系统会自动计算每公里成本</p>
+        
         <div className="input-grid">
           <div className="input-card electric">
-            <h3>⚡ 充电相关</h3>
-            <div className="input-group">
-              <label>百公里电耗</label>
-              <div className="input-wrapper">
-                <input
-                  type="number"
-                  value={electricPer100km}
-                  onChange={(e) => setElectricPer100km(Number(e.target.value) || 0)}
-                  step="0.1"
-                  min="0"
-                />
-                <span className="unit">度/百公里</span>
+            <h3>⚡ 充电花费</h3>
+            <div className="input-row">
+              <div className="input-group">
+                <label>充电花费</label>
+                <div className="input-wrapper">
+                  <input
+                    type="number"
+                    value={electricCost}
+                    onChange={(e) => setElectricCost(Number(e.target.value) || 0)}
+                    step="1"
+                    min="0"
+                  />
+                  <span className="unit">元</span>
+                </div>
+              </div>
+              <div className="input-group">
+                <label>跑了多少公里</label>
+                <div className="input-wrapper">
+                  <input
+                    type="number"
+                    value={electricDistance}
+                    onChange={(e) => setElectricDistance(Number(e.target.value) || 0)}
+                    step="1"
+                    min="0"
+                  />
+                  <span className="unit">公里</span>
+                </div>
               </div>
             </div>
             <div className="input-group">
-              <label>电价</label>
+              <label>当前电价（用于计算临界值）</label>
               <div className="input-wrapper">
                 <input
                   type="number"
-                  value={electricPrice}
-                  onChange={(e) => setElectricPrice(Number(e.target.value) || 0)}
+                  value={electricPricePerKwh}
+                  onChange={(e) => setElectricPricePerKwh(Number(e.target.value) || 0)}
                   step="0.1"
                   min="0"
                 />
                 <span className="unit">元/度</span>
               </div>
             </div>
-            <div className="calculated">
-              <span>百公里电费:</span>
-              <strong className="electric-value">{costs.electricCostPer100km.toFixed(2)} 元</strong>
+            <div className="calculated-results">
+              <div className="calculated">
+                <span>每公里电费:</span>
+                <strong className="electric-value">{costs.electricCostPerKm.toFixed(4)} 元</strong>
+              </div>
+              <div className="calculated">
+                <span>百公里电费:</span>
+                <strong className="electric-value">{costs.electricCostPer100km.toFixed(2)} 元</strong>
+              </div>
+              <div className="calculated">
+                <span>百公里电耗:</span>
+                <strong className="electric-value">{costs.electricPer100km.toFixed(2)} 度</strong>
+              </div>
             </div>
           </div>
 
           <div className="input-card fuel">
-            <h3>⛽ 加油相关</h3>
-            <div className="input-group">
-              <label>百公里油耗</label>
-              <div className="input-wrapper">
-                <input
-                  type="number"
-                  value={fuelPer100km}
-                  onChange={(e) => setFuelPer100km(Number(e.target.value) || 0)}
-                  step="0.1"
-                  min="0"
-                />
-                <span className="unit">升/百公里</span>
+            <h3>⛽ 加油花费</h3>
+            <div className="input-row">
+              <div className="input-group">
+                <label>加油花费</label>
+                <div className="input-wrapper">
+                  <input
+                    type="number"
+                    value={fuelCost}
+                    onChange={(e) => setFuelCost(Number(e.target.value) || 0)}
+                    step="1"
+                    min="0"
+                  />
+                  <span className="unit">元</span>
+                </div>
+              </div>
+              <div className="input-group">
+                <label>跑了多少公里</label>
+                <div className="input-wrapper">
+                  <input
+                    type="number"
+                    value={fuelDistance}
+                    onChange={(e) => setFuelDistance(Number(e.target.value) || 0)}
+                    step="1"
+                    min="0"
+                  />
+                  <span className="unit">公里</span>
+                </div>
               </div>
             </div>
             <div className="input-group">
-              <label>油价</label>
+              <label>当前油价（用于计算临界值）</label>
               <div className="input-wrapper">
                 <input
                   type="number"
-                  value={fuelPrice}
-                  onChange={(e) => setFuelPrice(Number(e.target.value) || 0)}
+                  value={fuelPricePerLiter}
+                  onChange={(e) => setFuelPricePerLiter(Number(e.target.value) || 0)}
                   step="0.1"
                   min="0"
                 />
                 <span className="unit">元/升</span>
               </div>
             </div>
-            <div className="calculated">
-              <span>百公里油费:</span>
-              <strong className="fuel-value">{costs.fuelCostPer100km.toFixed(2)} 元</strong>
+            <div className="calculated-results">
+              <div className="calculated">
+                <span>每公里油费:</span>
+                <strong className="fuel-value">{costs.fuelCostPerKm.toFixed(4)} 元</strong>
+              </div>
+              <div className="calculated">
+                <span>百公里油费:</span>
+                <strong className="fuel-value">{costs.fuelCostPer100km.toFixed(2)} 元</strong>
+              </div>
+              <div className="calculated">
+                <span>百公里油耗:</span>
+                <strong className="fuel-value">{costs.fuelPer100km.toFixed(2)} 升</strong>
+              </div>
             </div>
           </div>
         </div>
@@ -368,34 +460,12 @@ function App() {
           <h3><span className="icon">⚡</span> 充电成本</h3>
           <div className="param-value electric">{costs.electricCostPerKm.toFixed(4)}</div>
           <div className="param-unit">元/公里</div>
-          <div className="slider-container">
-            <label>电费价格: {electricPrice.toFixed(1)} 元/度</label>
-            <input
-              type="range"
-              min="0.5"
-              max="5"
-              step="0.1"
-              value={electricPrice}
-              onChange={(e) => setElectricPrice(Number(e.target.value))}
-            />
-          </div>
         </div>
 
         <div className="param-card">
           <h3><span className="icon">⛽</span> 加油成本</h3>
           <div className="param-value fuel">{costs.fuelCostPerKm.toFixed(4)}</div>
           <div className="param-unit">元/公里</div>
-          <div className="slider-container">
-            <label>油价: {fuelPrice.toFixed(1)} 元/升</label>
-            <input
-              type="range"
-              min="5"
-              max="12"
-              step="0.1"
-              value={fuelPrice}
-              onChange={(e) => setFuelPrice(Number(e.target.value))}
-            />
-          </div>
         </div>
 
         <div className="param-card">
@@ -528,7 +598,7 @@ function App() {
       </div>
 
       <footer>
-        <p>📊 数据根据您输入的车辆参数实时计算 | 默认值: 百公里电耗{DEFAULTS.electricPer100km}度, 百公里油耗{DEFAULTS.fuelPer100km}升</p>
+        <p>📊 数据根据您输入的实际花费计算 | 默认值: 充电{DEFAULTS.electricCost}元跑{DEFAULTS.electricDistance}公里, 加油{DEFAULTS.fuelCost}元跑{DEFAULTS.fuelDistance}公里</p>
       </footer>
     </div>
   )

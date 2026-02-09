@@ -40,9 +40,16 @@ h1 {
 
 .input-panel h2 {
   text-align: center;
-  margin-bottom: 25px;
+  margin-bottom: 10px;
   font-size: 1.5rem;
   color: #f1f5f9;
+}
+
+.input-hint {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  margin-bottom: 25px;
 }
 
 .input-grid {
@@ -113,21 +120,42 @@ h1 {
   white-space: nowrap;
 }
 
-.calculated {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.input-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+@media (max-width: 500px) {
+  .input-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.calculated-results {
   margin-top: 15px;
   padding-top: 15px;
   border-top: 1px solid rgba(255,255,255,0.1);
 }
 
+.calculated {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.calculated:not(:last-child) {
+  border-bottom: 1px dashed rgba(255,255,255,0.05);
+}
+
 .calculated span {
   color: #94a3b8;
+  font-size: 0.9rem;
 }
 
 .calculated strong {
-  font-size: 1.3rem;
+  font-size: 1.1rem;
 }
 
 .electric-value {
