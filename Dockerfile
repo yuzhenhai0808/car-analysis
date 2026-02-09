@@ -1,10 +1,27 @@
-# 使用轻量级的 nginx 镜像来托管静态网站
+# 阶段1: 构建 React 应用
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# 复制 package.json 和 lock 文件
+COPY package.json ./
+
+# 安装依赖
+RUN npm install
+
+# 复制源代码
+COPY . .
+
+# 构建生产版本
+RUN npm run build
+
+# 阶段2: 使用 nginx 托管静态文件
 FROM nginx:alpine
 
-# 复制静态文件到 nginx 默认目录
-COPY index.html /usr/share/nginx/html/
+# 从构建阶段复制构建产物
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# 可选：自定义 nginx 配置（启用 gzip 压缩等）
+# 复制 nginx 配置
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # 暴露 80 端口

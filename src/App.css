@@ -1,0 +1,453 @@
+.container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 30px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(120deg, #00d4ff, #7c3aed, #f472b6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  color: #94a3b8;
+  font-size: 1.1rem;
+}
+
+/* 用户输入面板 */
+.input-panel {
+  background: linear-gradient(145deg, rgba(124,58,237,0.15), rgba(124,58,237,0.05));
+  padding: 30px;
+  border-radius: 20px;
+  border: 2px solid rgba(124,58,237,0.3);
+  margin-bottom: 30px;
+}
+
+.input-panel h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 1.5rem;
+  color: #f1f5f9;
+}
+
+.input-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 25px;
+}
+
+.input-card {
+  background: rgba(0,0,0,0.3);
+  padding: 25px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.input-card.electric {
+  border-color: rgba(0,212,255,0.3);
+}
+
+.input-card.fuel {
+  border-color: rgba(249,115,22,0.3);
+}
+
+.input-card h3 {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  color: #f1f5f9;
+}
+
+.input-group {
+  margin-bottom: 15px;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.input-wrapper input {
+  flex: 1;
+  padding: 12px 15px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 600;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.input-wrapper input:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 15px rgba(124,58,237,0.3);
+}
+
+.input-wrapper .unit {
+  color: #64748b;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.calculated {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.calculated span {
+  color: #94a3b8;
+}
+
+.calculated strong {
+  font-size: 1.3rem;
+}
+
+.electric-value {
+  color: #00d4ff;
+}
+
+.fuel-value {
+  color: #f97316;
+}
+
+/* 参数面板 */
+.params-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.param-card {
+  background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+  padding: 25px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.param-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.param-card h3 {
+  font-size: 1rem;
+  color: #94a3b8;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.param-card h3 .icon {
+  font-size: 1.5rem;
+}
+
+.param-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 10px;
+}
+
+.param-value.electric { color: #00d4ff; }
+.param-value.fuel { color: #f97316; }
+.param-value.saving { color: #22c55e; }
+.param-value.warning { color: #ef4444; }
+.param-value.neutral { color: #fbbf24; }
+
+.param-unit {
+  font-size: 1rem;
+  color: #64748b;
+}
+
+.slider-container {
+  margin-top: 15px;
+}
+
+.slider-container label {
+  display: block;
+  margin-bottom: 8px;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+input[type="range"] {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.1);
+  outline: none;
+  -webkit-appearance: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00d4ff, #7c3aed);
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0,212,255,0.4);
+}
+
+/* 决策面板 */
+.decision-panel {
+  background: linear-gradient(145deg, rgba(34,197,94,0.2), rgba(34,197,94,0.05));
+  padding: 30px;
+  border-radius: 16px;
+  border: 2px solid rgba(34,197,94,0.3);
+  margin-bottom: 30px;
+}
+
+.decision-panel.warning {
+  background: linear-gradient(145deg, rgba(249,115,22,0.2), rgba(249,115,22,0.05));
+  border-color: rgba(249,115,22,0.3);
+}
+
+.decision-panel.equal {
+  background: linear-gradient(145deg, rgba(251,191,36,0.2), rgba(251,191,36,0.05));
+  border-color: rgba(251,191,36,0.3);
+}
+
+.decision-title {
+  font-size: 1.8rem;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.decision-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.decision-item {
+  background: rgba(0,0,0,0.2);
+  padding: 20px;
+  border-radius: 12px;
+}
+
+.decision-item h4 {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+.decision-item p {
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+/* 图表区域 */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+@media (max-width: 1200px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-card {
+  background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+  padding: 25px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.chart-card h3 {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  color: #f1f5f9;
+}
+
+.chart-container {
+  position: relative;
+  height: 350px;
+}
+
+/* 敏感性分析表 */
+.sensitivity-table-container {
+  grid-column: span 2;
+}
+
+@media (max-width: 1200px) {
+  .sensitivity-table-container {
+    grid-column: span 1;
+  }
+}
+
+.table-info {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+  padding: 10px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.sensitivity-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+.sensitivity-table th,
+.sensitivity-table td {
+  padding: 10px 6px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.8rem;
+}
+
+.sensitivity-table th {
+  background: rgba(255,255,255,0.1);
+  font-weight: 600;
+}
+
+.sensitivity-table .header-electric {
+  background: rgba(0,212,255,0.2);
+  color: #00d4ff;
+}
+
+.sensitivity-table .header-fuel {
+  background: rgba(249,115,22,0.2);
+  color: #f97316;
+}
+
+.sensitivity-table .electric-better {
+  background: rgba(0,212,255,0.25);
+  color: #00d4ff;
+}
+
+.sensitivity-table .fuel-better {
+  background: rgba(249,115,22,0.25);
+  color: #f97316;
+}
+
+.sensitivity-table .equal {
+  background: rgba(251,191,36,0.25);
+  color: #fbbf24;
+}
+
+.sensitivity-table .current-cell {
+  background: linear-gradient(135deg, rgba(124,58,237,0.4), rgba(236,72,153,0.4)) !important;
+  color: #fff !important;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 3px #fff;
+  animation: currentPulse 2s infinite;
+}
+
+@keyframes currentPulse {
+  0%, 100% { box-shadow: inset 0 0 0 3px rgba(255,255,255,0.8); }
+  50% { box-shadow: inset 0 0 0 3px rgba(255,255,255,0.4); }
+}
+
+.table-legend {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.legend-color {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+.electric-bg {
+  background: rgba(0,212,255,0.4);
+}
+
+.fuel-bg {
+  background: rgba(249,115,22,0.4);
+}
+
+.equal-bg {
+  background: rgba(251,191,36,0.4);
+}
+
+.current-bg {
+  background: linear-gradient(135deg, rgba(124,58,237,0.6), rgba(236,72,153,0.6));
+  border: 2px solid #fff;
+}
+
+footer {
+  text-align: center;
+  padding: 20px;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 1.8rem;
+  }
+  
+  .input-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .params-panel {
+    grid-template-columns: 1fr;
+  }
+  
+  .param-value {
+    font-size: 2rem;
+  }
+  
+  .decision-title {
+    font-size: 1.4rem;
+  }
+}
