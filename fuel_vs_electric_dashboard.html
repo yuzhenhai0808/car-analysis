@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚗 混动车能源成本分析看板</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e8e8e8;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(120deg, #00d4ff, #7c3aed, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+        
+        .params-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .param-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .param-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        
+        .param-card h3 {
+            font-size: 1rem;
+            color: #94a3b8;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .param-card h3 .icon {
+            font-size: 1.5rem;
+        }
+        
+        .param-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+        
+        .param-value.electric { color: #00d4ff; }
+        .param-value.fuel { color: #f97316; }
+        .param-value.saving { color: #22c55e; }
+        .param-value.warning { color: #ef4444; }
+        
+        .param-unit {
+            font-size: 1rem;
+            color: #64748b;
+        }
+        
+        .slider-container {
+            margin-top: 15px;
+        }
+        
+        .slider-container label {
+            display: block;
+            margin-bottom: 8px;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,212,255,0.4);
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 1200px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .chart-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .chart-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #f1f5f9;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 350px;
+        }
+        
+        .decision-panel {
+            background: linear-gradient(145deg, rgba(34,197,94,0.2), rgba(34,197,94,0.05));
+            padding: 30px;
+            border-radius: 16px;
+            border: 2px solid rgba(34,197,94,0.3);
+            margin-bottom: 30px;
+        }
+        
+        .decision-panel.warning {
+            background: linear-gradient(145deg, rgba(249,115,22,0.2), rgba(249,115,22,0.05));
+            border-color: rgba(249,115,22,0.3);
+        }
+        
+        .decision-title {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .decision-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .decision-item {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 12px;
+        }
+        
+        .decision-item h4 {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        
+        .decision-item p {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .sensitivity-table-container {
+            grid-column: span 2;
+            overflow-x: auto;
+        }
+        
+        @media (max-width: 1200px) {
+            .sensitivity-table-container {
+                grid-column: span 1;
+            }
+        }
+        
+        .sensitivity-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            min-width: 800px;
+        }
+        
+        .sensitivity-table th, .sensitivity-table td {
+            padding: 12px 8px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.85rem;
+        }
+        
+        .sensitivity-table th {
+            background: rgba(255,255,255,0.1);
+            font-weight: 600;
+        }
+        
+        .sensitivity-table .header-electric {
+            background: rgba(0,212,255,0.2);
+            color: #00d4ff;
+        }
+        
+        .sensitivity-table .header-fuel {
+            background: rgba(249,115,22,0.2);
+            color: #f97316;
+        }
+        
+        .sensitivity-table .electric-better {
+            background: rgba(0,212,255,0.25);
+            color: #00d4ff;
+        }
+        
+        .sensitivity-table .fuel-better {
+            background: rgba(249,115,22,0.25);
+            color: #f97316;
+        }
+        
+        .sensitivity-table .equal {
+            background: rgba(251,191,36,0.25);
+            color: #fbbf24;
+        }
+        
+        .sensitivity-table .current-cell {
+            background: linear-gradient(135deg, rgba(124,58,237,0.4), rgba(236,72,153,0.4)) !important;
+            color: #fff !important;
+            font-weight: 700;
+            box-shadow: inset 0 0 0 3px #fff;
+            animation: currentPulse 2s infinite;
+        }
+        
+        @keyframes currentPulse {
+            0%, 100% { box-shadow: inset 0 0 0 3px rgba(255,255,255,0.8); }
+            50% { box-shadow: inset 0 0 0 3px rgba(255,255,255,0.4); }
+        }
+        
+        .table-legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .legend-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        
+        .table-info {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚗 混动车能源成本分析看板</h1>
+            <p class="subtitle">智能分析加油与充电的最优选择 | 实时计算临界点</p>
+        </header>
+        
+        <!-- 参数面板 -->
+        <div class="params-panel">
+            <div class="param-card">
+                <h3><span class="icon">⚡</span> 充电成本</h3>
+                <div class="param-value electric" id="electricCost">0.58</div>
+                <div class="param-unit">元/公里</div>
+                <div class="slider-container">
+                    <label>电费价格: <span id="electricPriceLabel">2.1</span> 元/度</label>
+                    <input type="range" id="electricPrice" min="0.5" max="5" step="0.1" value="2.1">
+                </div>
+            </div>
+            
+            <div class="param-card">
+                <h3><span class="icon">⛽</span> 加油成本</h3>
+                <div class="param-value fuel" id="fuelCost">0.50</div>
+                <div class="param-unit">元/公里</div>
+                <div class="slider-container">
+                    <label>油价: <span id="fuelPriceLabel">7.0</span> 元/升</label>
+                    <input type="range" id="fuelPrice" min="5" max="12" step="0.1" value="7">
+                </div>
+            </div>
+            
+            <div class="param-card">
+                <h3><span class="icon">📊</span> 成本差异</h3>
+                <div class="param-value" id="costDiff">+0.08</div>
+                <div class="param-unit">元/公里 (正=充电贵)</div>
+            </div>
+            
+            <div class="param-card">
+                <h3><span class="icon">🎯</span> 临界电价</h3>
+                <div class="param-value saving" id="criticalPrice">1.81</div>
+                <div class="param-unit">元/度 (超过此价加油更划算)</div>
+            </div>
+        </div>
+        
+        <!-- 决策面板 -->
+        <div class="decision-panel" id="decisionPanel">
+            <div class="decision-title" id="decisionTitle">
+                <span>⛽</span> 当前建议: 加油更划算
+            </div>
+            <div class="decision-content">
+                <div class="decision-item">
+                    <h4>每公里节省</h4>
+                    <p id="savingPerKm">0.08 元</p>
+                </div>
+                <div class="decision-item">
+                    <h4>年节省 (按1.5万公里)</h4>
+                    <p id="annualSaving">1,200 元</p>
+                </div>
+                <div class="decision-item">
+                    <h4>电价上涨空间</h4>
+                    <p id="priceRoom">电价还可上涨至 1.81 元/度</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 图表区域 -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>📈 电费变化对成本的影响</h3>
+                <div class="chart-container">
+                    <canvas id="costChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <h3>📊 油价变化时的临界电价</h3>
+                <div class="chart-container">
+                    <canvas id="criticalChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <h3>💵 不同场景年度成本对比 (1.5万公里)</h3>
+                <div class="chart-container">
+                    <canvas id="scenarioChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <h3>📉 成本比率变化趋势</h3>
+                <div class="chart-container">
+                    <canvas id="ratioChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 敏感性分析表 -->
+            <div class="chart-card sensitivity-table-container">
+                <h3>📋 敏感性分析表 - 动态成本对比矩阵</h3>
+                <div class="table-info" id="tableInfo">
+                    以当前价格为中心 | 充电成本: <span id="currentElecCost">0.58</span> 元/km | 加油成本: <span id="currentFuelCost">0.50</span> 元/km
+                </div>
+                <table class="sensitivity-table" id="sensitivityTable">
+                    <!-- 动态生成 -->
+                </table>
+                <div class="table-legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(0,212,255,0.4);"></div>
+                        <span>⚡ 充电更划算</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(249,115,22,0.4);"></div>
+                        <span>⛽ 加油更划算</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(251,191,36,0.4);"></div>
+                        <span>⚖️ 差异&lt;1%</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, rgba(124,58,237,0.6), rgba(236,72,153,0.6)); border: 2px solid #fff;"></div>
+                        <span>★ 当前位置</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>📊 数据基于实际车辆参数计算 | 充电: 29元/次, 续航50km, 约13.81度 | 加油: 100元可跑200km</p>
+        </footer>
+    </div>
+    
+    <script>
+        // ==================== 基础参数 ====================
+        const CHARGE_DISTANCE = 50;  // 充一次电跑50公里
+        const CHARGE_COST = 29;      // 每次充电29元
+        const FUEL_100_YUAN_DISTANCE = 200;  // 100元油跑200公里
+        
+        let electricPrice = 2.1;  // 电费2.1元/度
+        let fuelPrice = 7;        // 油价7元/升
+        
+        // 固定每次充电度数
+        const FIXED_KWH = 13.81;
+        
+        // 每升油跑的公里数
+        const FUEL_EFFICIENCY = FUEL_100_YUAN_DISTANCE / (100 / 7);  // 约14公里/升
+        
+        // ==================== 计算函数 ====================
+        function calcElectricCostPerKm(elecPrice) {
+            return (elecPrice * FIXED_KWH) / CHARGE_DISTANCE;
+        }
+        
+        function calcFuelCostPerKm(fPrice) {
+            return fPrice / FUEL_EFFICIENCY;
+        }
+        
+        function calcCriticalElectricPrice(fPrice) {
+            const fuelCostPerKm = calcFuelCostPerKm(fPrice);
+            return (fuelCostPerKm * CHARGE_DISTANCE) / FIXED_KWH;
+        }
+        
+        // ==================== 更新界面 ====================
+        function updateDashboard() {
+            const elecCost = calcElectricCostPerKm(electricPrice);
+            const fCost = calcFuelCostPerKm(fuelPrice);
+            const diff = elecCost - fCost;
+            const critical = calcCriticalElectricPrice(fuelPrice);
+            
+            // 更新数值显示
+            document.getElementById('electricCost').textContent = elecCost.toFixed(4);
+            document.getElementById('fuelCost').textContent = fCost.toFixed(4);
+            document.getElementById('costDiff').textContent = (diff >= 0 ? '+' : '') + diff.toFixed(4);
+            document.getElementById('criticalPrice').textContent = critical.toFixed(2);
+            
+            // 更新成本差异颜色
+            const diffEl = document.getElementById('costDiff');
+            if (diff > 0.02) {
+                diffEl.className = 'param-value warning';
+            } else if (diff < -0.02) {
+                diffEl.className = 'param-value saving';
+            } else {
+                diffEl.className = 'param-value';
+                diffEl.style.color = '#fbbf24';
+            }
+            
+            // 更新决策面板
+            const panel = document.getElementById('decisionPanel');
+            const title = document.getElementById('decisionTitle');
+            const saving = Math.abs(diff);
+            const annualKm = 15000;
+            const annualSaving = saving * annualKm;
+            
+            if (diff > 0.01) {
+                panel.className = 'decision-panel warning';
+                title.innerHTML = '<span>⛽</span> 当前建议: 加油更划算';
+                document.getElementById('priceRoom').textContent = 
+                    `电价需降至 ${critical.toFixed(2)} 元/度以下充电才划算`;
+            } else if (diff < -0.01) {
+                panel.className = 'decision-panel';
+                title.innerHTML = '<span>⚡</span> 当前建议: 充电更划算';
+                document.getElementById('priceRoom').textContent = 
+                    `电价可上涨至 ${critical.toFixed(2)} 元/度仍然划算`;
+            } else {
+                panel.className = 'decision-panel';
+                panel.style.background = 'linear-gradient(145deg, rgba(251,191,36,0.2), rgba(251,191,36,0.05))';
+                panel.style.borderColor = 'rgba(251,191,36,0.3)';
+                title.innerHTML = '<span>⚖️</span> 当前建议: 成本基本持平';
+                document.getElementById('priceRoom').textContent = 
+                    `临界电价: ${critical.toFixed(2)} 元/度`;
+            }
+            
+            document.getElementById('savingPerKm').textContent = saving.toFixed(4) + ' 元';
+            document.getElementById('annualSaving').textContent = annualSaving.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' 元';
+            
+            // 更新图表和敏感性分析表
+            updateCharts();
+            updateSensitivityTable();
+        }
+        
+        // ==================== 图表配置 ====================
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: '#e8e8e8' }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#94a3b8' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                },
+                y: {
+                    ticks: { color: '#94a3b8' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                }
+            }
+        };
+        
+        let costChart, criticalChart, scenarioChart, ratioChart;
+        
+        function initCharts() {
+            // 成本对比图
+            const costCtx = document.getElementById('costChart').getContext('2d');
+            costChart = new Chart(costCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '充电成本 (元/公里)',
+                            data: [],
+                            borderColor: '#00d4ff',
+                            backgroundColor: 'rgba(0,212,255,0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: '加油成本 (元/公里)',
+                            data: [],
+                            borderColor: '#f97316',
+                            backgroundColor: 'rgba(249,115,22,0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: chartOptions
+            });
+            
+            // 临界电价图
+            const criticalCtx = document.getElementById('criticalChart').getContext('2d');
+            criticalChart = new Chart(criticalCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '临界电价 (元/度)',
+                        data: [],
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34,197,94,0.2)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: chartOptions
+            });
+            
+            // 场景对比图
+            const scenarioCtx = document.getElementById('scenarioChart').getContext('2d');
+            scenarioChart = new Chart(scenarioCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['当前价格', '电费+50%', '电费+100%', '油价+30%', '油价+50%'],
+                    datasets: [
+                        {
+                            label: '纯充电',
+                            data: [],
+                            backgroundColor: '#00d4ff',
+                            borderRadius: 8
+                        },
+                        {
+                            label: '纯加油',
+                            data: [],
+                            backgroundColor: '#f97316',
+                            borderRadius: 8
+                        }
+                    ]
+                },
+                options: chartOptions
+            });
+            
+            // 成本比率图
+            const ratioCtx = document.getElementById('ratioChart').getContext('2d');
+            ratioChart = new Chart(ratioCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '成本比率 (充电/加油)',
+                        data: [],
+                        borderColor: '#7c3aed',
+                        backgroundColor: 'rgba(124,58,237,0.2)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: chartOptions
+            });
+        }
+        
+        function updateCharts() {
+            // 更新成本对比图
+            const elecPrices = [];
+            const elecCosts = [];
+            const fuelCosts = [];
+            for (let p = 0.5; p <= 5; p += 0.1) {
+                elecPrices.push(p.toFixed(1));
+                elecCosts.push(calcElectricCostPerKm(p));
+                fuelCosts.push(calcFuelCostPerKm(fuelPrice));
+            }
+            costChart.data.labels = elecPrices;
+            costChart.data.datasets[0].data = elecCosts;
+            costChart.data.datasets[1].data = fuelCosts;
+            costChart.update();
+            
+            // 更新临界电价图
+            const fuelPrices = [];
+            const criticalPrices = [];
+            for (let f = 5; f <= 12; f += 0.2) {
+                fuelPrices.push(f.toFixed(1));
+                criticalPrices.push(calcCriticalElectricPrice(f));
+            }
+            criticalChart.data.labels = fuelPrices;
+            criticalChart.data.datasets[0].data = criticalPrices;
+            criticalChart.update();
+            
+            // 更新场景对比图
+            const annualKm = 15000;
+            const scenarios = [
+                { elecMult: 1, fuelMult: 1 },
+                { elecMult: 1.5, fuelMult: 1 },
+                { elecMult: 2, fuelMult: 1 },
+                { elecMult: 1, fuelMult: 1.3 },
+                { elecMult: 1, fuelMult: 1.5 }
+            ];
+            const elecAnnual = scenarios.map(s => 
+                calcElectricCostPerKm(electricPrice * s.elecMult) * annualKm
+            );
+            const fuelAnnual = scenarios.map(s => 
+                calcFuelCostPerKm(fuelPrice * s.fuelMult) * annualKm
+            );
+            scenarioChart.data.datasets[0].data = elecAnnual;
+            scenarioChart.data.datasets[1].data = fuelAnnual;
+            scenarioChart.update();
+            
+            // 更新成本比率图
+            const ratios = elecPrices.map((p, i) => elecCosts[i] / fuelCosts[i]);
+            ratioChart.data.labels = elecPrices;
+            ratioChart.data.datasets[0].data = ratios;
+            ratioChart.update();
+        }
+        
+        // ==================== 动态敏感性分析表 ====================
+        function updateSensitivityTable() {
+            const table = document.getElementById('sensitivityTable');
+            const currentElecCost = calcElectricCostPerKm(electricPrice);
+            const currentFuelCost = calcFuelCostPerKm(fuelPrice);
+            
+            // 更新表格信息
+            document.getElementById('currentElecCost').textContent = currentElecCost.toFixed(4);
+            document.getElementById('currentFuelCost').textContent = currentFuelCost.toFixed(4);
+            
+            // 以当前成本为中心，生成动态范围
+            // 充电成本变化范围 (-40% ~ +60%)
+            const elecCostVariations = [-0.40, -0.30, -0.20, -0.10, 0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60];
+            // 加油成本变化范围 (-30% ~ +50%)
+            const fuelCostVariations = [-0.30, -0.20, -0.10, 0, 0.10, 0.20, 0.30, 0.40, 0.50];
+            
+            let html = '<tr><th class="header-fuel">加油成本↓ \\ 充电成本→</th>';
+            
+            // 表头：充电成本变化
+            elecCostVariations.forEach(v => {
+                const cost = currentElecCost * (1 + v);
+                const label = v === 0 ? '当前' : (v > 0 ? `+${(v*100).toFixed(0)}%` : `${(v*100).toFixed(0)}%`);
+                html += `<th class="header-electric">${label}<br><small>${cost.toFixed(3)}元/km</small></th>`;
+            });
+            html += '</tr>';
+            
+            // 表体：加油成本变化 vs 充电成本变化
+            fuelCostVariations.forEach(fv => {
+                const fCost = currentFuelCost * (1 + fv);
+                const fLabel = fv === 0 ? '当前' : (fv > 0 ? `+${(fv*100).toFixed(0)}%` : `${(fv*100).toFixed(0)}%`);
+                
+                html += `<tr><td class="header-fuel"><strong>${fLabel}</strong><br><small>${fCost.toFixed(3)}元/km</small></td>`;
+                
+                elecCostVariations.forEach(ev => {
+                    const eCost = currentElecCost * (1 + ev);
+                    const diff = eCost - fCost;
+                    const diffPercent = Math.abs(diff) / Math.max(eCost, fCost) * 100;
+                    const isCurrent = (ev === 0 && fv === 0);
+                    
+                    let cellClass = '';
+                    let content = '';
+                    
+                    if (diffPercent < 1) {
+                        cellClass = 'equal';
+                        content = `⚖️ 持平<br><small>差${Math.abs(diff).toFixed(4)}</small>`;
+                    } else if (diff < 0) {
+                        cellClass = 'electric-better';
+                        content = `⚡ 充电<br><small>省${Math.abs(diff).toFixed(4)}/km</small>`;
+                    } else {
+                        cellClass = 'fuel-better';
+                        content = `⛽ 加油<br><small>省${diff.toFixed(4)}/km</small>`;
+                    }
+                    
+                    if (isCurrent) {
+                        cellClass += ' current-cell';
+                        content = `★ 当前<br><small>差${Math.abs(diff).toFixed(4)}/km</small>`;
+                    }
+                    
+                    html += `<td class="${cellClass}">${content}</td>`;
+                });
+                
+                html += '</tr>';
+            });
+            
+            table.innerHTML = html;
+        }
+        
+        // ==================== 事件监听 ====================
+        document.getElementById('electricPrice').addEventListener('input', function() {
+            electricPrice = parseFloat(this.value);
+            document.getElementById('electricPriceLabel').textContent = electricPrice.toFixed(1);
+            updateDashboard();
+        });
+        
+        document.getElementById('fuelPrice').addEventListener('input', function() {
+            fuelPrice = parseFloat(this.value);
+            document.getElementById('fuelPriceLabel').textContent = fuelPrice.toFixed(1);
+            updateDashboard();
+        });
+        
+        // ==================== 初始化 ====================
+        window.addEventListener('load', function() {
+            initCharts();
+            updateDashboard();
+        });
+    </script>
+</body>
+</html>
